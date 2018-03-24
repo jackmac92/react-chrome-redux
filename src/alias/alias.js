@@ -6,9 +6,20 @@
 export default aliases => () => next => action => {
   const alias = aliases[action.type];
 
-  if (alias) {
-    return next(alias(action));
+  if (!alias) {
+    return next(action);
   }
 
-  return next(action);
+  const aliasResponse = alias(action);
+
+  if (typeof aliasResponse.then !== 'function') {
+    return next(aliasResponse);
+  }
+  aliasResponse.then((...response) =>
+    next(
+      Object.assign({}, action, {
+        aliasResult: response,
+      })
+    )
+  );
 };
